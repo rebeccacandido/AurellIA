@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Splash } from './components/pages/Splash';
 import { Onboarding } from './components/pages/Onboarding';
 import { Login } from './components/pages/Login';
-import { RoleSelection } from './components/pages/RoleSelection';
 import { BottomNav } from './components/EDU/BottomNav';
 
 // Student Pages
@@ -26,7 +25,7 @@ import { ManagerPerfil } from './components/pages/manager/Perfil';
 
 import { Home, Map, ShoppingBag, Trophy, BarChart3, Users, FileText, UserCircle } from 'lucide-react';
 
-type AppFlow = 'splash' | 'onboarding' | 'login' | 'roleSelection' | 'app';
+type AppFlow = 'splash' | 'onboarding' | 'login' | 'app';
 type Role = 'student' | 'teacher' | 'manager' | null;
 
 export default function App() {
@@ -70,28 +69,20 @@ export default function App() {
     setFlow('onboarding');
   };
 
-  const handleLoginSuccess = () => {
-    setFlow('roleSelection');
-  };
-  
-  const handleBackToLogin = () => {
-    setFlow('login');
-  };
-
-  const handleRoleSelect = (selectedRole: 'student' | 'teacher' | 'manager') => {
+  const handleLoginSuccess = (selectedRole: 'student' | 'teacher' | 'manager') => {
     setRole(selectedRole);
     setActivePage(selectedRole === 'student' ? 'home' : 'indicadores');
     setFlow('app');
   };
+  
+  const handleBackToLogin = () => {
+    setRole(null);
+    setActivePage('home');
+    setFlow('login');
+  };
 
   const handleNavigate = (page: string) => {
     setActivePage(page);
-  };
-
-  const handleBackToRoleSelection = () => {
-    setRole(null);
-    setActivePage('home');
-    setFlow('roleSelection');
   };
 
   const handleLogout = () => {
@@ -180,17 +171,6 @@ export default function App() {
     );
   }
 
-  if (flow === 'roleSelection') {
-    return (
-      <div className="min-h-screen bg-[#F6F7F9] flex items-center justify-center">
-        <RoleSelection 
-          onSelectRole={handleRoleSelect}
-          onBack={handleBackToLogin}
-        />
-      </div>
-    );
-  }
-
   // App principal com navegação por papel
   return (
     <div className="min-h-screen bg-[#F6F7F9] flex items-center justify-center">
@@ -207,7 +187,7 @@ export default function App() {
               </p>
             </div>
             <button
-              onClick={handleBackToRoleSelection}
+              onClick={handleBackToLogin}
               className="px-3 py-2 bg-[#F6F7F9] rounded-xl hover:bg-[#E0E3E7] transition-colors"
             >
               <small className="text-[#2D5BFF]">Trocar</small>

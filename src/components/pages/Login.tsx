@@ -12,7 +12,7 @@ import {
 import logo from "figma:asset/09f7ee12a8c5086d31827a15c309403f49a5355c.png";
 
 interface LoginProps {
-  onLoginSuccess: () => void;
+  onLoginSuccess: (role: 'student' | 'teacher' | 'manager') => void;
   onBack?: () => void;
 }
 
@@ -26,7 +26,7 @@ export function Login({ onLoginSuccess, onBack }: LoginProps) {
 
   const handleLogin = () => {
     if (email && password) {
-      onLoginSuccess();
+      onLoginSuccess(selectedRole);
     }
   };
 
