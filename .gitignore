@@ -1,6 +1,15 @@
 # Dependencies
 node_modules/
 node_modules/*
+node_modules/**/*
+*/node_modules/**/**
+# Production
+/.turbo/
+/.next/
+/out/
+/.vercel/
+/.expo/
+/.expo-shared/  
 
 # Build artifacts
 dist/
