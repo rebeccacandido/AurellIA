@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, Mail, School, BookOpen, Edit2, LogOut, Trophy, Coins, Award } from 'lucide-react';
+import { useStudent } from '../../../context/StudentContext';
 
 interface StudentPerfilProps {
   onLogout: () => void;
@@ -14,9 +15,10 @@ export function StudentPerfil({ onLogout }: StudentPerfilProps) {
     serie: '8º Ano',
     bio: 'Adoro matemática e ciências! Meu objetivo é chegar ao nível 20.'
   });
+  const { student } = useStudent();
 
   const stats = {
-    moedas: 2450,
+    moedas: student?.coins ?? 2450,
     nivel: 12,
     quizesCompletos: 58,
     badges: 18,

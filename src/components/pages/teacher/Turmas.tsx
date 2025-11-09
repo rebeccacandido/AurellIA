@@ -2,11 +2,19 @@ import React, { useState } from 'react';
 import { Users, ChevronRight, Target, TrendingUp, BookOpen, Search, ChevronDown } from 'lucide-react';
 import { MetricaCard } from '../../EDU/Card/Metrica';
 import { InsightIACard } from '../../EDU/Card/InsightIA';
+import { Button } from '../../EDU/Button';
+import { api, GroupPerformanceReport } from '../../../lib/api';
+
+type GroupPerformanceData = GroupPerformanceReport['data'] | null;
 
 export function TeacherTurmas() {
   const [selectedTurma, setSelectedTurma] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedAluno, setExpandedAluno] = useState<number | null>(null);
+  const [groupReport, setGroupReport] = useState<GroupPerformanceData>(null);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [isLoadingReport, setIsLoadingReport] = useState(false);
+  const [reportTurmaId, setReportTurmaId] = useState<string | null>(null);
 
   const turmas = [
     { 
@@ -14,7 +22,8 @@ export function TeacherTurmas() {
       nome: '7º A', 
       alunos: 30, 
       progresso: 72,
-      disciplina: 'Matemática'
+      disciplina: 'Matemática',
+      groupId: 1
     }
   ];
 
@@ -57,6 +66,24 @@ export function TeacherTurmas() {
     }
   ];
 
+  const handleGenerateReport = async (turmaId: string, groupId: number) => {
+    setIsLoadingReport(true);
+    setReportError(null);
+    setReportTurmaId(turmaId);
+    try {
+      const response = await api.generateQuizGroupReport(groupId);
+      setGroupReport(response.data);
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : 'Não foi possível gerar o relatório da turma.';
+      setReportError(message);
+      setGroupReport(null);
+    } finally {
+      setIsLoadingReport(false);
+    }
+  };
+
   // Filtrar alunos por nome
   const alunosFiltrados = alunosPerfil.filter(aluno =>
     aluno.nome.toLowerCase().includes(searchTerm.toLowerCase())
@@ -71,7 +98,12 @@ export function TeacherTurmas() {
         {/* Header com botão voltar */}
         <div>
           <button 
-            onClick={() => setSelectedTurma(null)}
+            onClick={() => {
+              setSelectedTurma(null);
+              setGroupReport(null);
+              setReportError(null);
+              setReportTurmaId(null);
+            }}
             className="text-[#2D5BFF] mb-2 flex items-center gap-1"
           >
             ← Voltar
@@ -94,6 +126,68 @@ export function TeacherTurmas() {
             value={`${turma?.alunos - 4}/${turma?.alunos}`}
             icon={<Users size={24} />}
           />
+        </div>
+
+        {/* Relatório IA */}
+        <div className="bg-white rounded-3xl p-5 card-shadow space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-[#1C1C1E] mb-1">Relatório IA da turma</h3>
+              <small className="text-[#9CA3AF]">Insights personalizados com IA</small>
+            </div>
+            {turma?.groupId && (
+              <Button
+                variant="secondary"
+                onClick={() => handleGenerateReport(turma.id, turma.groupId)}
+                state={isLoadingReport ? 'disabled' : 'default'}
+              >
+                {isLoadingReport && reportTurmaId === turma.id ? 'Gerando...' : 'Gerar'}
+              </Button>
+            )}
+          </div>
+          {reportError && reportTurmaId === turma?.id && (
+            <div className="p-3 bg-red-50 text-red-600 rounded-xl border border-red-100">
+              {reportError}
+            </div>
+          )}
+          {groupReport && reportTurmaId === turma?.id ? (
+            <div className="space-y-3">
+              <div className="text-sm text-[#9CA3AF]">
+                Período: {groupReport.period.start} a {groupReport.period.end}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-[#F6F7F9] rounded-2xl p-3">
+                  <small className="text-[#9CA3AF] block">Taxa média de acertos</small>
+                  <p className="text-xl text-[#1C1C1E]">
+                    {groupReport.group_metrics.average_accuracy_rate}%
+                  </p>
+                </div>
+                <div className="bg-[#F6F7F9] rounded-2xl p-3">
+                  <small className="text-[#9CA3AF] block">Tempo médio</small>
+                  <p className="text-xl text-[#1C1C1E]">
+                    {groupReport.group_metrics.average_time_spent}s
+                  </p>
+                </div>
+              </div>
+              <div>
+                <small className="text-[#9CA3AF] block mb-1">Destaques da semana</small>
+                <ul className="space-y-1 text-sm text-[#1C1C1E]">
+                  {groupReport.student_ranking.slice(0, 3).map((student) => (
+                    <li key={student.student_id} className="flex items-center justify-between">
+                      <span>{student.name}</span>
+                      <span>{student.accuracy_rate}%</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ) : (
+            !isLoadingReport && (
+              <p className="text-[#9CA3AF] text-sm">
+                Gere um relatório para visualizar o desempenho consolidado desta turma.
+              </p>
+            )
+          )}
         </div>
 
         {/* Disciplina */}
@@ -229,7 +323,12 @@ export function TeacherTurmas() {
         {turmas.map((turma) => (
           <button
             key={turma.id}
-            onClick={() => setSelectedTurma(turma.id)}
+            onClick={() => {
+              setSelectedTurma(turma.id);
+              setGroupReport(null);
+              setReportError(null);
+              setReportTurmaId(null);
+            }}
             className="w-full bg-white rounded-3xl p-5 card-shadow hover:scale-[1.02] active:scale-[0.98] transition-transform text-left"
           >
             <div className="flex items-center justify-between">

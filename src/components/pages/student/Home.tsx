@@ -4,18 +4,23 @@ import { Badge } from '../../EDU/Badge';
 import { Button } from '../../EDU/Button';
 import { ArrowRight } from 'lucide-react';
 import logo from 'figma:asset/09f7ee12a8c5086d31827a15c309403f49a5355c.png';
+import { useStudent } from '../../../context/StudentContext';
 
 interface StudentHomeProps {
   onNavigate: (page: string) => void;
 }
 
 export function StudentHome({ onNavigate }: StudentHomeProps) {
+  const { student } = useStudent();
+  const coins = student?.coins ?? 0;
+  const displayName = student?.name ?? 'Marina';
+
   return (
     <div className="pb-20 px-6 pt-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-[#1C1C1E]">Olá, Marina! 👋</h2>
+          <h2 className="text-[#1C1C1E]">Olá, {displayName.split(' ')[0]}! 👋</h2>
           <p className="text-[#9CA3AF]">Pronta para aprender hoje?</p>
         </div>
         <img src={logo} alt="AurellIA" className="w-20" />
@@ -36,7 +41,7 @@ export function StudentHome({ onNavigate }: StudentHomeProps) {
         <div className="flex items-center justify-between mb-4">
           <div>
             <p className="text-[#9CA3AF] mb-2">Saldo de Moedas</p>
-            <CoinsChip amount={2450} size="large" />
+            <CoinsChip amount={coins} size="large" />
           </div>
           <div className="text-6xl">💰</div>
         </div>
