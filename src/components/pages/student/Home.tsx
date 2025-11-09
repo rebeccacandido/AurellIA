@@ -21,13 +21,13 @@ export function StudentHome({ onNavigate }: StudentHomeProps) {
         <img src={logo} alt="AurellIA" className="w-20" />
       </div>
       
-      {/* Botão Continuar Jornada */}
+      {/* Botão Iniciar Jornada */}
       <Button 
         variant="primary" 
         fullWidth 
         onClick={() => onNavigate('jornada')}
       >
-        Continuar Jornada
+        Iniciar Jornada
         <ArrowRight size={18} />
       </Button>
       
