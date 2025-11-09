@@ -1,94 +1,97 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { TopTabs } from '../../EDU/TopTabs';
 import { AtividadeCard } from '../../EDU/Card/Atividade';
 import { Modal } from '../../EDU/Modal';
 import { Quiz } from '../../EDU/Quiz';
 import { CoinsChip } from '../../EDU/CoinsChip';
 import { Button } from '../../EDU/Button';
-import { Lock, CheckCircle } from 'lucide-react';
-import { api, QuizAnswerPayload, QuizQuestion, QuizSubmissionResponse } from '../../../lib/api';
+import { CheckCircle } from 'lucide-react';
+import { api, Discipline, QuizAnswerPayload, QuizQuestion, QuizSubmissionResponse, QuizSummary } from '../../../lib/api';
 import { appConfig } from '../../../lib/config';
-import { useStudent } from '../../../context/StudentContext';
 
-type Disciplina = 'portugues' | 'matematica' | 'ciencias' | 'historia' | 'geografia';
-
-interface Atividade {
-  id: number;
-  title: string;
-  description: string;
-  coins: number;
-  quizId?: number;
-}
-
-const disciplinas: { id: Disciplina; label: string }[] = [
-  { id: 'portugues', label: 'Português' },
-  { id: 'matematica', label: 'Matemática' },
-  { id: 'ciencias', label: 'Ciências' },
-  { id: 'historia', label: 'História' },
-  { id: 'geografia', label: 'Geografia' }
-];
-
-// Perguntas para cada tema
-const atividadesData: Record<Disciplina, Atividade[]> = {
-  portugues: [
-    { id: 1, title: 'Interpretação de Texto', description: 'Responda 5 questões sobre gramática', coins: 120 },
-    { id: 2, title: 'Figuras de Linguagem', description: 'Identifique metáforas e metonímias', coins: 150 },
-    { id: 3, title: 'Análise Sintática', description: 'Classifique os termos da oração', coins: 200 }
-  ],
-  matematica: [
-    { id: 4, title: 'Equações de 1º Grau', description: 'Resolva 5 equações', coins: 180 },
-    { id: 5, title: 'Geometria Plana', description: 'Calcule áreas e perímetros', coins: 220 },
-    { id: 6, title: 'Frações', description: 'Operações com frações', coins: 140 }
-  ],
-  ciencias: [
-    { id: 7, title: 'Sistema Solar', description: 'Conheça os planetas', coins: 160 },
-    { id: 8, title: 'Fotossíntese', description: 'Entenda o processo das plantas', coins: 190 }
-  ],
-  historia: [
-    { id: 9, title: 'Brasil Colonial', description: 'Período colonial brasileiro', coins: 170 },
-    { id: 10, title: 'Revolução Industrial', description: 'Transformações na Europa', coins: 210 }
-  ],
-  geografia: [
-    { id: 11, title: 'Clima e Vegetação', description: 'Tipos de clima no Brasil', coins: 150 },
-    { id: 12, title: 'Relevo Brasileiro', description: 'Formas de relevo', coins: 180 }
-  ]
-};
+type QuizActivity = QuizSummary & { coins: number };
 
 export function StudentJornada() {
-  const [activeTab, setActiveTab] = useState<Disciplina>('portugues');
-  const [selectedAtividade, setSelectedAtividade] = useState<Atividade | null>(null);
-  const [selectedDisciplina, setSelectedDisciplina] = useState<Disciplina | null>(null);
+  const [disciplines, setDisciplines] = useState<Discipline[]>([]);
+  const [activeTab, setActiveTab] = useState<string>('');
+  const [selectedQuiz, setSelectedQuiz] = useState<QuizActivity | null>(null);
+  const [selectedDisciplina, setSelectedDisciplina] = useState<string | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
   const [isQuizLoading, setIsQuizLoading] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [quizError, setQuizError] = useState<string | null>(null);
+  const [isLoadingDisciplines, setIsLoadingDisciplines] = useState(true);
+  const [isLoadingQuizzes, setIsLoadingQuizzes] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [quizzesByDiscipline, setQuizzesByDiscipline] = useState<Record<string, QuizSummary[]>>({});
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [completedScore, setCompletedScore] = useState(0);
   const [earnedCoins, setEarnedCoins] = useState(0);
   const [lastResultMessage, setLastResultMessage] = useState('');
-  const [completedActivity, setCompletedActivity] = useState<Atividade | null>(null);
-  const [completedActivities, setCompletedActivities] = useState<Record<Disciplina, number[]>>({
-    portugues: [],
-    matematica: [],
-    ciencias: [],
-    historia: [],
-    geografia: []
-  });
+  const [completedActivities, setCompletedActivities] = useState<Record<string, number[]>>({});
 
   const studentId = appConfig.defaultStudentId;
-  const { updateCoins } = useStudent();
-  
-  const startQuiz = async (atividade: Atividade, disciplina: Disciplina) => {
-    const quizId = atividade.quizId ?? atividade.id;
-    setSelectedDisciplina(disciplina);
-    setSelectedAtividade(atividade);
+
+  const tabs = useMemo(
+    () => disciplines.map((discipline) => ({ id: String(discipline.id), label: discipline.name })),
+    [disciplines]
+  );
+
+  useEffect(() => {
+    const fetchDisciplines = async () => {
+      try {
+        const data = await api.listDisciplines();
+        setDisciplines(data);
+        if (data.length > 0) {
+          const firstId = String(data[0].id);
+          setActiveTab(firstId);
+          await fetchQuizzesForDiscipline(firstId);
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Não foi possível carregar as disciplinas.';
+        setLoadError(message);
+      } finally {
+        setIsLoadingDisciplines(false);
+      }
+    };
+
+    fetchDisciplines();
+  }, []);
+
+  const fetchQuizzesForDiscipline = async (disciplineId: string) => {
+    setIsLoadingQuizzes(true);
+    setLoadError(null);
+    try {
+      const quizzes = await api.listQuizzes({ disciplineId: Number(disciplineId) });
+      setQuizzesByDiscipline((prev) => ({
+        ...prev,
+        [disciplineId]: quizzes,
+      }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Não foi possível carregar os quizzes.';
+      setLoadError(message);
+    } finally {
+      setIsLoadingQuizzes(false);
+    }
+  };
+
+  const handleTabChange = async (tabId: string) => {
+    setActiveTab(tabId);
+    if (!quizzesByDiscipline[tabId]) {
+      await fetchQuizzesForDiscipline(tabId);
+    }
+  };
+
+  const startQuiz = async (quizSummary: QuizSummary, coinsReward: number) => {
+    setSelectedDisciplina(String(quizSummary.discipline_id));
+    setSelectedQuiz({ ...quizSummary, coins: coinsReward });
     setShowQuiz(true);
     setQuizQuestions([]);
     setQuizError(null);
     setIsQuizLoading(true);
 
     try {
-      const quiz = await api.getQuiz(quizId);
+      const quiz = await api.getQuiz(quizSummary.id);
       if (!quiz.questions || quiz.questions.length === 0) {
         setQuizError('Este quiz ainda não possui questões cadastradas.');
         return;
@@ -104,19 +107,9 @@ export function StudentJornada() {
     }
   };
 
-  const handleAtividadeClick = (atividade: Atividade, disciplina: Disciplina) => {
-    const atividades = atividadesData[disciplina];
-    const atividadeIndex = atividades.findIndex(a => a.id === atividade.id);
-
-    if (atividadeIndex === 0) {
-      startQuiz(atividade, disciplina);
-      return;
-    }
-
-    const previousActivityId = atividades[atividadeIndex - 1].id;
-    if (completedActivities[disciplina].includes(previousActivityId)) {
-      startQuiz(atividade, disciplina);
-    }
+  const handleSelectQuiz = (quiz: QuizSummary) => {
+    const coinsReward = Math.max(quiz.questions_count, 1) * 20;
+    startQuiz(quiz, coinsReward);
   };
   
   const handleQuizComplete = (result: QuizSubmissionResponse) => {
@@ -126,63 +119,57 @@ export function StudentJornada() {
     setShowQuiz(false);
     setQuizQuestions([]);
     setQuizError(null);
-    updateCoins(result.total_coins);
+    const disciplineKey = selectedDisciplina ?? activeTab;
+    setCompletedActivities((prev) => ({
+      ...prev,
+      [disciplineKey]: [...(prev[disciplineKey] || []), result.quiz_id],
+    }));
 
-    if (selectedAtividade && selectedDisciplina && result.score_percent >= 60) {
-      setCompletedActivities(prev => ({
-        ...prev,
-        [selectedDisciplina]: [...prev[selectedDisciplina], selectedAtividade.id]
-      }));
-      setCompletedActivity(selectedAtividade);
+    if (selectedDisciplina && result.score_percent >= 60) {
       setShowCompletionModal(true);
     } else {
-      setSelectedAtividade(null);
+      setSelectedQuiz(null);
       setSelectedDisciplina(null);
     }
   };
   
   const handleQuizCancel = () => {
     setShowQuiz(false);
-    setSelectedAtividade(null);
+    setSelectedQuiz(null);
     setSelectedDisciplina(null);
     setQuizQuestions([]);
     setQuizError(null);
   };
 
   const handleQuizSubmit = (answers: QuizAnswerPayload[]) => {
-    if (!selectedAtividade) {
+    if (!selectedQuiz) {
       return Promise.reject(new Error('Nenhum quiz selecionado.'));
     }
 
-    const quizId = selectedAtividade.quizId ?? selectedAtividade.id;
     return api.submitQuiz({
       student_id: studentId,
-      quiz_id: quizId,
+      quiz_id: selectedQuiz.id,
       answers,
     });
   };
 
   const closeCompletionModal = () => {
     setShowCompletionModal(false);
-    setSelectedAtividade(null);
+    setSelectedQuiz(null);
     setSelectedDisciplina(null);
-    setCompletedActivity(null);
   };
   
-  const isActivityLocked = (atividade: Atividade, disciplina: Disciplina) => {
-    const atividades = atividadesData[disciplina];
-    const atividadeIndex = atividades.findIndex(a => a.id === atividade.id);
-    
-    // Primeira atividade sempre desbloqueada
-    if (atividadeIndex === 0) return false;
-    
-    // Verificar se a atividade anterior foi concluída
-    const previousActivityId = atividades[atividadeIndex - 1].id;
-    return !completedActivities[disciplina].includes(previousActivityId);
-  };
+  const activities = useMemo(() => {
+    if (!activeTab) return [];
+    const quizzes = quizzesByDiscipline[activeTab] || [];
+    return quizzes.map((quiz) => ({
+      ...quiz,
+      coins: Math.max(quiz.questions_count, 1) * 20,
+    }));
+  }, [activeTab, quizzesByDiscipline]);
   
-  const isActivityCompleted = (atividadeId: number, disciplina: Disciplina) => {
-    return completedActivities[disciplina].includes(atividadeId);
+  const isActivityCompleted = (quizId: number, disciplineId: string) => {
+    return (completedActivities[disciplineId] || []).includes(quizId);
   };
   
   return (
@@ -192,49 +179,65 @@ export function StudentJornada() {
         <p className="text-[#9CA3AF]">Complete os temas em sequência</p>
       </div>
       
-      <TopTabs 
-        tabs={disciplinas} 
-        active={activeTab} 
-        onSelect={setActiveTab} 
-      />
-      
-      <div className="space-y-4">
-        {atividadesData[activeTab as keyof typeof atividadesData].map((atividade) => {
-          const isLocked = isActivityLocked(atividade, activeTab);
-          const isCompleted = isActivityCompleted(atividade.id, activeTab);
+      {isLoadingDisciplines ? (
+        <div className="text-center text-[#9CA3AF] py-12">Carregando disciplinas...</div>
+      ) : disciplines.length === 0 ? (
+        <div className="text-center text-[#9CA3AF] py-12">
+          Nenhuma disciplina disponível no momento.
+        </div>
+      ) : (
+        <>
+          <TopTabs 
+            tabs={tabs} 
+            active={activeTab} 
+            onSelect={handleTabChange} 
+          />
           
-          return (
-            <div key={atividade.id} className="relative">
-              <AtividadeCard
-                title={atividade.title}
-                description={atividade.description}
-                coins={atividade.coins}
-                onClick={() => handleAtividadeClick(atividade, activeTab)}
-                disabled={isLocked}
-              />
-              {isLocked && (
-                <div className="absolute inset-0 bg-white/80 rounded-3xl flex items-center justify-center backdrop-blur-sm">
-                  <div className="text-center">
-                    <Lock size={32} className="text-[#9CA3AF] mx-auto mb-2" />
-                    <p className="text-[#9CA3AF]">Complete o tema anterior</p>
-                  </div>
-                </div>
-              )}
-              {isCompleted && (
-                <div className="absolute top-4 right-4 bg-green-500 rounded-full p-2">
-                  <CheckCircle size={20} className="text-white" />
-                </div>
-              )}
+          {loadError && (
+            <div className="p-4 bg-red-50 rounded-2xl text-red-600 border border-red-100">
+              {loadError}
             </div>
-          );
-        })}
-      </div>
+          )}
+      
+          <div className="space-y-4">
+            {isLoadingQuizzes ? (
+              <div className="text-center text-[#9CA3AF] py-12">
+                Carregando quizzes desta disciplina...
+              </div>
+            ) : activities.length === 0 ? (
+              <div className="text-center text-[#9CA3AF] py-12">
+                Nenhum quiz disponível para esta disciplina ainda.
+              </div>
+            ) : (
+              activities.map((atividade) => {
+                const isCompleted = isActivityCompleted(atividade.id, activeTab);
+                
+                return (
+                  <div key={atividade.id} className="relative">
+                    <AtividadeCard
+                      title={atividade.title}
+                      description={atividade.description}
+                      coins={atividade.coins}
+                      onClick={() => handleSelectQuiz(atividade)}
+                    />
+                    {isCompleted && (
+                      <div className="absolute top-4 right-4 bg-green-500 rounded-full p-2">
+                        <CheckCircle size={20} className="text-white" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </>
+      )}
       
       {/* Modal de Quiz */}
       <Modal
-        isOpen={showQuiz && !!selectedAtividade}
+        isOpen={showQuiz && !!selectedQuiz}
         onClose={handleQuizCancel}
-        title={selectedAtividade?.title || ''}
+        title={selectedQuiz?.title || ''}
       >
         {isQuizLoading && (
           <div className="py-10 text-center text-[#9CA3AF]">
@@ -251,13 +254,13 @@ export function StudentJornada() {
           </div>
         )}
 
-        {!isQuizLoading && !quizError && selectedAtividade && quizQuestions.length > 0 && (
+        {!isQuizLoading && !quizError && selectedQuiz && quizQuestions.length > 0 && (
           <Quiz
             questions={quizQuestions}
             onComplete={handleQuizComplete}
             onCancel={handleQuizCancel}
             onSubmitAnswers={handleQuizSubmit}
-            coins={selectedAtividade.coins}
+            coins={selectedQuiz.coins}
           />
         )}
 
@@ -287,7 +290,7 @@ export function StudentJornada() {
           </div>
           <div>
             <h3 className="text-[#1C1C1E] mb-2">
-              {completedActivity ? `${completedActivity.title} concluído!` : 'Tema Concluído!'}
+              {selectedQuiz ? `${selectedQuiz.title} concluído!` : 'Tema Concluído!'}
             </h3>
             <p className="text-[#9CA3AF]">
               {lastResultMessage || `Sua pontuação: ${completedScore}%`}
@@ -296,7 +299,7 @@ export function StudentJornada() {
           <div className="bg-[#FEF3C7] rounded-2xl p-4">
             <p className="text-[#9CA3AF] mb-2">Você ganhou:</p>
             <div className="flex justify-center">
-              <CoinsChip amount={earnedCoins || completedActivity?.coins || 0} size="large" />
+              <CoinsChip amount={earnedCoins || selectedQuiz?.coins || 0} size="large" />
             </div>
           </div>
           <div className="p-4 bg-[#F6F7F9] rounded-2xl">

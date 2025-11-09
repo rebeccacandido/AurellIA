@@ -92,6 +92,21 @@ export type Student = {
   group_id?: number | null;
 };
 
+export type Discipline = {
+  id: number;
+  name: string;
+  code: string;
+};
+
+export type QuizSummary = {
+  id: number;
+  title: string;
+  description: string;
+  discipline_id: number;
+  questions_count: number;
+  discipline?: Discipline;
+};
+
 export type GroupNarrativeReport = OperationResult<string[]>;
 
 export type GroupPerformanceReport = OperationResult<{
@@ -132,6 +147,13 @@ export type GroupPerformanceReport = OperationResult<{
   }>;
 }>;
 
+export type CreateQuizPayload = {
+  discipline_id: number;
+  title: string;
+  description: string;
+  questions: number[];
+};
+
 export const api = {
   listProducts: () => request<Product[]>('/products'),
   buyProduct: (studentId: number, productId: number) =>
@@ -147,6 +169,15 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+  createQuiz: (payload: CreateQuizPayload) =>
+    request<Quiz>('/quizzes', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  listQuizzes: (params?: { disciplineId?: number }) => {
+    const query = params?.disciplineId ? `?discipline_id=${params.disciplineId}` : '';
+    return request<QuizSummary[]>(`/quizzes${query}`);
+  },
   generateQuizGroupReport: (groupId: number) =>
     request<GroupPerformanceReport>(`/quizzes/${groupId}/generate-group-report`, {
       method: 'POST',
@@ -156,4 +187,5 @@ export const api = {
       method: 'POST',
     }),
   getStudent: (studentId: number) => request<Student>(`/students/${studentId}`),
+  listDisciplines: () => request<Discipline[]>('/disciplines'),
 };

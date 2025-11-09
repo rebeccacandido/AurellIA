@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Users, ChevronRight, Target, TrendingUp, BookOpen, Search, ChevronDown } from 'lucide-react';
 import { MetricaCard } from '../../EDU/Card/Metrica';
 import { InsightIACard } from '../../EDU/Card/InsightIA';
 import { Button } from '../../EDU/Button';
-import { api, GroupPerformanceReport } from '../../../lib/api';
+import { api, Discipline, GroupPerformanceReport, QuizQuestion } from '../../../lib/api';
 
 type GroupPerformanceData = GroupPerformanceReport['data'] | null;
 
@@ -15,6 +15,16 @@ export function TeacherTurmas() {
   const [reportError, setReportError] = useState<string | null>(null);
   const [isLoadingReport, setIsLoadingReport] = useState(false);
   const [reportTurmaId, setReportTurmaId] = useState<string | null>(null);
+  const [disciplines, setDisciplines] = useState<Discipline[]>([]);
+  const [selectedDisciplineId, setSelectedDisciplineId] = useState<string>('');
+  const [availableQuestions, setAvailableQuestions] = useState<QuizQuestion[]>([]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
+  const [questionsError, setQuestionsError] = useState<string | null>(null);
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState<number[]>([]);
+  const [quizTitle, setQuizTitle] = useState('');
+  const [quizDescription, setQuizDescription] = useState('');
+  const [isSubmittingQuiz, setIsSubmittingQuiz] = useState(false);
+  const [quizFeedback, setQuizFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const turmas = [
     { 
@@ -81,6 +91,101 @@ export function TeacherTurmas() {
       setGroupReport(null);
     } finally {
       setIsLoadingReport(false);
+    }
+  };
+
+  const loadQuestions = async (disciplineId: string) => {
+    if (!disciplineId) {
+      setAvailableQuestions([]);
+      return;
+    }
+    setIsLoadingQuestions(true);
+    setQuestionsError(null);
+    try {
+      const response = await api.listQuestionsByDiscipline(Number(disciplineId));
+      setAvailableQuestions(response);
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : 'Não foi possível carregar as questões.';
+      setQuestionsError(message);
+      setAvailableQuestions([]);
+    } finally {
+      setIsLoadingQuestions(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedTurma) {
+      setDisciplines([]);
+      setSelectedDisciplineId('');
+      setAvailableQuestions([]);
+      return;
+    }
+
+    const fetchDisciplines = async () => {
+      try {
+        const response = await api.listDisciplines();
+        setDisciplines(response);
+        if (response.length > 0) {
+          const defaultId = String(response[0].id);
+          setSelectedDisciplineId(defaultId);
+          await loadQuestions(defaultId);
+        }
+      } catch (error) {
+        const message = error instanceof Error
+          ? error.message
+          : 'Não foi possível carregar as disciplinas.';
+        setQuestionsError(message);
+      }
+    };
+
+    fetchDisciplines();
+  }, [selectedTurma]);
+
+  const handleDisciplineChange = async (value: string) => {
+    setSelectedDisciplineId(value);
+    setSelectedQuestionIds([]);
+    await loadQuestions(value);
+  };
+
+  const toggleQuestionSelection = (questionId: number) => {
+    setSelectedQuestionIds((prev) =>
+      prev.includes(questionId)
+        ? prev.filter((id) => id !== questionId)
+        : [...prev, questionId]
+    );
+  };
+
+  const handleCreateQuiz = async () => {
+    if (!selectedDisciplineId) {
+      setQuizFeedback({ type: 'error', message: 'Selecione uma disciplina.' });
+      return;
+    }
+
+    if (selectedQuestionIds.length === 0) {
+      setQuizFeedback({ type: 'error', message: 'Selecione pelo menos uma questão.' });
+      return;
+    }
+
+    setIsSubmittingQuiz(true);
+    setQuizFeedback(null);
+    try {
+      await api.createQuiz({
+        discipline_id: Number(selectedDisciplineId),
+        title: quizTitle || `Quiz ${new Date().toLocaleDateString('pt-BR')}`,
+        description: quizDescription || 'Quiz criado pelo professor.',
+        questions: selectedQuestionIds,
+      });
+      setQuizFeedback({ type: 'success', message: 'Quiz criado e publicado com sucesso!' });
+      setQuizTitle('');
+      setQuizDescription('');
+      setSelectedQuestionIds([]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Não foi possível criar o quiz.';
+      setQuizFeedback({ type: 'error', message });
+    } finally {
+      setIsSubmittingQuiz(false);
     }
   };
 
@@ -188,6 +293,118 @@ export function TeacherTurmas() {
               </p>
             )
           )}
+        </div>
+
+        {/* Gerador de Quiz */}
+        <div className="bg-white rounded-3xl p-5 card-shadow space-y-4">
+          <div>
+            <h3 className="text-[#1C1C1E] mb-1">Gerar novo quiz</h3>
+            <p className="text-[#9CA3AF]">Selecione a disciplina e monte o desafio para a turma.</p>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label className="text-sm text-[#1C1C1E]">Disciplina</label>
+              <select
+                className="w-full mt-1 px-4 py-3 border border-[#E0E3E7] rounded-xl focus:outline-none focus:border-[#2D5BFF]"
+                value={selectedDisciplineId}
+                onChange={(event) => handleDisciplineChange(event.target.value)}
+                disabled={disciplines.length === 0}
+              >
+                {disciplines.map((discipline) => (
+                  <option key={discipline.id} value={discipline.id}>
+                    {discipline.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm text-[#1C1C1E]">Título do quiz</label>
+                <input
+                  type="text"
+                  className="w-full mt-1 px-4 py-3 border border-[#E0E3E7] rounded-xl focus:outline-none focus:border-[#2D5BFF]"
+                  placeholder="Ex: Revisão de Frações"
+                  value={quizTitle}
+                  onChange={(event) => setQuizTitle(event.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm text-[#1C1C1E]">Descrição</label>
+                <input
+                  type="text"
+                  className="w-full mt-1 px-4 py-3 border border-[#E0E3E7] rounded-xl focus:outline-none focus:border-[#2D5BFF]"
+                  placeholder="Resumo ou objetivo do quiz"
+                  value={quizDescription}
+                  onChange={(event) => setQuizDescription(event.target.value)}
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm text-[#1C1C1E]">Questões disponíveis</label>
+                <small className="text-[#9CA3AF]">
+                  {selectedQuestionIds.length} selecionadas
+                </small>
+              </div>
+
+              {isLoadingQuestions ? (
+                <div className="text-center text-[#9CA3AF] py-6">
+                  Carregando questões...
+                </div>
+              ) : availableQuestions.length === 0 ? (
+                <div className="text-center text-[#9CA3AF] py-6">
+                  Nenhuma questão cadastrada para esta disciplina.
+                </div>
+              ) : (
+                <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
+                  {availableQuestions.map((question) => (
+                    <label
+                      key={question.id}
+                      className="flex items-start gap-3 p-3 border border-[#E0E3E7] rounded-xl cursor-pointer hover:bg-[#F6F7F9]"
+                    >
+                      <input
+                        type="checkbox"
+                        className="mt-1"
+                        checked={selectedQuestionIds.includes(question.id)}
+                        onChange={() => toggleQuestionSelection(question.id)}
+                      />
+                      <span className="text-sm text-[#1C1C1E]">{question.content}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {questionsError && (
+              <div className="p-3 bg-red-50 text-red-600 rounded-xl border border-red-100">
+                {questionsError}
+              </div>
+            )}
+
+            {quizFeedback && (
+              <div
+                className={`p-3 rounded-xl border ${
+                  quizFeedback.type === 'success'
+                    ? 'bg-green-50 text-green-700 border-green-200'
+                    : 'bg-red-50 text-red-600 border-red-100'
+                }`}
+              >
+                {quizFeedback.message}
+              </div>
+            )}
+
+            <Button
+              variant="primary"
+              fullWidth
+              onClick={handleCreateQuiz}
+              state={isSubmittingQuiz ? 'disabled' : 'default'}
+            >
+              {isSubmittingQuiz ? 'Publicando...' : 'Publicar quiz'}
+            </Button>
+          </div>
         </div>
 
         {/* Disciplina */}
