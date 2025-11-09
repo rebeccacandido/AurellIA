@@ -2,9 +2,30 @@ import React, { useState } from 'react';
 import { InsightIACard } from '../../EDU/Card/InsightIA';
 import { Button } from '../../EDU/Button';
 import { FileText, Download, TrendingUp, AlertTriangle, CheckCircle, Sparkles, Calendar } from 'lucide-react';
+import { api } from '../../../lib/api';
+import { appConfig } from '../../../lib/config';
 
 export function ManagerRelatoriosIA() {
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
+  const [iaNarrative, setIaNarrative] = useState<string[] | null>(null);
+  const [iaLoading, setIaLoading] = useState(false);
+  const [iaError, setIaError] = useState<string | null>(null);
+
+  const handleGenerateNarrative = async () => {
+    setIaLoading(true);
+    setIaError(null);
+    try {
+      const response = await api.generateGroupNarrativeReport(appConfig.defaultGroupId);
+      setIaNarrative(response.data ?? []);
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : 'Não foi possível gerar o relatório em tempo real.';
+      setIaError(message);
+    } finally {
+      setIaLoading(false);
+    }
+  };
   
   const relatorios = [
     {
@@ -79,6 +100,43 @@ export function ManagerRelatoriosIA() {
       <div>
         <h2 className="text-[#1C1C1E] mb-2">Relatórios com IA</h2>
         <p className="text-[#9CA3AF]">Insights avançados para tomada de decisão</p>
+      </div>
+
+      <div className="bg-white rounded-3xl p-5 card-shadow space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-[#1C1C1E] mb-1">Relatório IA em tempo real</h3>
+            <small className="text-[#9CA3AF]">
+              Grupo #{appConfig.defaultGroupId}
+            </small>
+          </div>
+          <Button
+            variant="primary"
+            onClick={handleGenerateNarrative}
+            state={iaLoading ? 'disabled' : 'default'}
+          >
+            {iaLoading ? 'Gerando...' : 'Gerar'}
+          </Button>
+        </div>
+        {iaError && (
+          <div className="p-3 bg-red-50 text-red-600 rounded-xl border border-red-100">
+            {iaError}
+          </div>
+        )}
+        {iaNarrative && iaNarrative.length > 0 ? (
+          <div className="space-y-2 text-sm text-[#4B5563]">
+            {iaNarrative.map((paragraph, index) => (
+              <p key={index}>{paragraph}</p>
+            ))}
+          </div>
+        ) : (
+          !iaLoading &&
+          !iaError && (
+            <p className="text-[#9CA3AF] text-sm">
+              Gere um relatório para visualizar o resumo estratégico mais recente.
+            </p>
+          )
+        )}
       </div>
       
       {/* Tipos de Relatórios */}
