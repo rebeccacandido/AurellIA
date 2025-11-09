@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { InsightIACard } from '../../EDU/Card/InsightIA';
 import { Button } from '../../EDU/Button';
-import { FileText, Download, TrendingUp, AlertTriangle, CheckCircle, Sparkles } from 'lucide-react';
+import { FileText, Download, TrendingUp, AlertTriangle, CheckCircle, Sparkles, Calendar } from 'lucide-react';
 
 export function ManagerRelatoriosIA() {
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
@@ -52,11 +52,26 @@ export function ManagerRelatoriosIA() {
       recomendacao: 'Investir em produção de conteúdo multimídia e capacitar professores para uso de ferramentas digitais.'
     }
   ];
-  
-  const comparativos = [
-    { unidade: 'Unidade Centro', progresso: 78, engajamento: 85, risco: 2.1 },
-    { unidade: 'Unidade Norte', progresso: 72, engajamento: 78, risco: 5.2 },
-    { unidade: 'Unidade Sul', progresso: 75, engajamento: 82, risco: 3.5 }
+
+  const relatoriosMensais = [
+    {
+      mes: 'Outubro 2025',
+      arquivo: 'relatorio_outubro_2025.pdf',
+      tamanho: '2.4 MB',
+      data: '01/11/2025'
+    },
+    {
+      mes: 'Setembro 2025',
+      arquivo: 'relatorio_setembro_2025.pdf',
+      tamanho: '2.1 MB',
+      data: '01/10/2025'
+    },
+    {
+      mes: 'Agosto 2025',
+      arquivo: 'relatorio_agosto_2025.pdf',
+      tamanho: '2.3 MB',
+      data: '01/09/2025'
+    }
   ];
   
   return (
@@ -98,89 +113,37 @@ export function ManagerRelatoriosIA() {
         })}
       </div>
       
-      {/* Insights IA */}
+      {/* Relatórios Mensais de Desempenho */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <Sparkles size={24} className="text-[#2D5BFF]" />
-          <h3 className="text-[#1C1C1E]">Insights Gerados por IA</h3>
+          <Calendar size={24} className="text-[#2D5BFF]" />
+          <h3 className="text-[#1C1C1E]">Relatórios Mensais de Desempenho</h3>
         </div>
         
-        {insights.map((item, index) => (
-          <div key={index} className="bg-white rounded-3xl p-5 card-shadow">
-            <h4 className="text-[#2D5BFF] mb-3">{item.categoria}</h4>
-            
-            <div className="space-y-3">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 bg-[#2D5BFF] rounded-full" />
-                  <small className="text-[#9CA3AF]">Análise</small>
-                </div>
-                <p className="text-[#1C1C1E] ml-4">{item.insight}</p>
-              </div>
-              
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full" />
-                  <small className="text-[#9CA3AF]">Recomendação</small>
-                </div>
-                <p className="text-[#1C1C1E] ml-4">{item.recomendacao}</p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      {/* Comparativo entre Unidades */}
-      <div className="bg-white rounded-3xl p-5 card-shadow">
-        <h3 className="text-[#1C1C1E] mb-4">Comparativo de Unidades</h3>
-        <div className="space-y-4">
-          {comparativos.map((item, index) => (
-            <div key={index} className="pb-4 border-b border-[#E0E3E7] last:border-0 last:pb-0">
-              <h4 className="text-[#1C1C1E] mb-3">{item.unidade}</h4>
-              
-              <div className="space-y-2">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <small className="text-[#9CA3AF]">Progresso</small>
-                    <small className="text-[#2D5BFF]">{item.progresso}%</small>
+        {/* Lista de PDFs Mensais */}
+        <div className="space-y-3">
+          {relatoriosMensais.map((relatorio, index) => (
+            <div key={index} className="bg-white rounded-3xl p-4 card-shadow">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center">
+                    <FileText size={24} className="text-red-600" />
                   </div>
-                  <div className="w-full h-2 bg-[#E0E3E7] rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-[#2D5BFF] rounded-full transition-all"
-                      style={{ width: `${item.progresso}%` }}
-                    />
+                  <div>
+                    <h4 className="text-[#1C1C1E] mb-1">{relatorio.mes}</h4>
+                    <div className="flex items-center gap-3">
+                      <small className="text-[#9CA3AF]">{relatorio.tamanho}</small>
+                      <span className="text-[#E0E3E7]">•</span>
+                      <small className="text-[#9CA3AF]">Gerado em {relatorio.data}</small>
+                    </div>
                   </div>
                 </div>
-                
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <small className="text-[#9CA3AF]">Engajamento</small>
-                    <small className="text-green-600">{item.engajamento}%</small>
-                  </div>
-                  <div className="w-full h-2 bg-[#E0E3E7] rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-green-500 rounded-full transition-all"
-                      style={{ width: `${item.engajamento}%` }}
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <small className="text-[#9CA3AF]">Alunos em Risco</small>
-                    <small className={item.risco > 4 ? 'text-red-600' : 'text-yellow-600'}>
-                      {item.risco}%
-                    </small>
-                  </div>
-                  <div className="w-full h-2 bg-[#E0E3E7] rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full transition-all ${
-                        item.risco > 4 ? 'bg-red-500' : 'bg-yellow-500'
-                      }`}
-                      style={{ width: `${item.risco * 10}%` }}
-                    />
-                  </div>
-                </div>
+                <button
+                  onClick={() => alert(`Baixando ${relatorio.arquivo}...`)}
+                  className="w-10 h-10 bg-[#F6F7F9] rounded-xl flex items-center justify-center hover:bg-[#2D5BFF] hover:text-white transition-colors"
+                >
+                  <Download size={18} />
+                </button>
               </div>
             </div>
           ))}

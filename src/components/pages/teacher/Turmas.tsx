@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Users, ChevronRight, Target, TrendingUp, BookOpen } from 'lucide-react';
+import { Users, ChevronRight, Target, TrendingUp, BookOpen, Search, ChevronDown } from 'lucide-react';
 import { MetricaCard } from '../../EDU/Card/Metrica';
 import { InsightIACard } from '../../EDU/Card/InsightIA';
 
 export function TeacherTurmas() {
   const [selectedTurma, setSelectedTurma] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [expandedAluno, setExpandedAluno] = useState<number | null>(null);
 
   const turmas = [
     { 
@@ -18,24 +20,47 @@ export function TeacherTurmas() {
 
   const alunosPerfil = [
     { 
-      nome: 'Pedro Silva', 
-      forcas: ['Geometria Plana'],
-      fraquezas: ['Equações de 1º Grau'],
-      preferencias: ['Geometria Plana']
-    },
-    { 
       nome: 'Ana Costa', 
       forcas: ['Frações'],
       fraquezas: ['Geometria Plana'],
       preferencias: ['Frações']
     },
     { 
+      nome: 'Carla Mendes', 
+      forcas: ['Geometria Plana', 'Frações'],
+      fraquezas: ['Equações de 1º Grau'],
+      preferencias: ['Geometria Plana']
+    },
+    { 
+      nome: 'João Ferreira', 
+      forcas: ['Estatística'],
+      fraquezas: ['Álgebra'],
+      preferencias: ['Estatística']
+    },
+    { 
       nome: 'Lucas Oliveira', 
       forcas: ['Equações de 1º Grau'],
       fraquezas: ['Frações'],
       preferencias: ['Equações de 1º Grau']
+    },
+    { 
+      nome: 'Maria Santos', 
+      forcas: ['Álgebra'],
+      fraquezas: ['Estatística'],
+      preferencias: ['Álgebra']
+    },
+    { 
+      nome: 'Pedro Silva', 
+      forcas: ['Geometria Plana'],
+      fraquezas: ['Equações de 1º Grau'],
+      preferencias: ['Geometria Plana']
     }
   ];
+
+  // Filtrar alunos por nome
+  const alunosFiltrados = alunosPerfil.filter(aluno =>
+    aluno.nome.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   // Se uma turma estiver selecionada, mostra o relatório
   if (selectedTurma) {
@@ -117,45 +142,67 @@ export function TeacherTurmas() {
         {/* Perfil dos Alunos */}
         <div className="bg-white rounded-3xl p-5 card-shadow">
           <h3 className="text-[#1C1C1E] mb-4">Perfil dos Alunos</h3>
-          <div className="space-y-4">
-            {alunosPerfil.map((aluno, index) => (
-              <div key={index} className="border-b border-[#E0E3E7] last:border-0 pb-4 last:pb-0">
-                <h4 className="text-[#1C1C1E] mb-2">{aluno.nome}</h4>
-                <div className="space-y-2">
-                  <div>
-                    <small className="text-[#9CA3AF]">Forças:</small>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {aluno.forcas.map((forca, i) => (
-                        <span key={i} className="px-2 py-1 bg-green-100 text-green-700 rounded-lg text-xs">
-                          {forca}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <small className="text-[#9CA3AF]">Fraquezas:</small>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {aluno.fraquezas.map((fraqueza, i) => (
-                        <span key={i} className="px-2 py-1 bg-red-100 text-red-700 rounded-lg text-xs">
-                          {fraqueza}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <small className="text-[#9CA3AF]">Preferências:</small>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {aluno.preferencias.map((pref, i) => (
-                        <span key={i} className="px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs">
-                          {pref}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+          
+          {/* Campo de Busca */}
+          <div className="mb-4 relative">
+            <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+            <input
+              type="text"
+              placeholder="Buscar aluno por nome..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-[#F6F7F9] rounded-xl border border-[#E0E3E7] focus:outline-none focus:border-[#2D5BFF] transition-colors"
+            />
           </div>
+
+          {/* Lista de Alunos Filtrados */}
+          {alunosFiltrados.length > 0 ? (
+            <div className="space-y-2">
+              {alunosFiltrados.map((aluno, index) => (
+                <div key={index} className="border border-[#E0E3E7] rounded-xl overflow-hidden">
+                  <button
+                    onClick={() => setExpandedAluno(expandedAluno === index ? null : index)}
+                    className="w-full p-3 flex items-center justify-between hover:bg-[#F6F7F9] transition-colors"
+                  >
+                    <span className="text-[#1C1C1E]">{aluno.nome}</span>
+                    <ChevronDown 
+                      size={18} 
+                      className={`text-[#9CA3AF] transition-transform ${expandedAluno === index ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  
+                  {expandedAluno === index && (
+                    <div className="px-3 pb-3 pt-1 space-y-2 bg-[#F6F7F9]/50">
+                      <div>
+                        <small className="text-[#9CA3AF]">Forças:</small>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {aluno.forcas.map((forca, i) => (
+                            <span key={i} className="px-2 py-0.5 bg-green-100 text-green-700 rounded-lg text-xs">
+                              {forca}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <small className="text-[#9CA3AF]">Fraquezas:</small>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {aluno.fraquezas.map((fraqueza, i) => (
+                            <span key={i} className="px-2 py-0.5 bg-red-100 text-red-700 rounded-lg text-xs">
+                              {fraqueza}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-[#9CA3AF]">Nenhum aluno encontrado</p>
+            </div>
+          )}
         </div>
 
         {/* Insight IA */}
