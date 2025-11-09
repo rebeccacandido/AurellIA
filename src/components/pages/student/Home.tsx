@@ -50,10 +50,16 @@ export function StudentHome({ onNavigate }: StudentHomeProps) {
         </Button>
       </div>
       
-      {/* Progresso Geral */}
+      {/* Quizzes Respondidos */}
       <div className="bg-white rounded-3xl p-5 card-shadow space-y-4">
-        <h3 className="text-[#1C1C1E]">Progresso Geral</h3>
-        <ProgressBar progress={68} />
+        <h3 className="text-[#1C1C1E]">Quizzes Respondidos</h3>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-[#2D5BFF]">12</h2>
+            <p className="text-[#9CA3AF]">quizzes completos</p>
+          </div>
+          <div className="text-5xl">📝</div>
+        </div>
       </div>
       
       {/* Posição */}

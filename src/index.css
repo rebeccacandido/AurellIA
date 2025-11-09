@@ -90,7 +90,6 @@
     --color-blue-400: oklch(.707 .165 254.624);
     --color-blue-500: oklch(.623 .214 259.815);
     --color-blue-600: oklch(.546 .245 262.881);
-    --color-blue-700: oklch(.488 .243 264.376);
     --color-purple-400: oklch(.714 .203 305.504);
     --color-purple-500: oklch(.627 .265 303.9);
     --color-purple-600: oklch(.558 .288 302.321);
@@ -104,14 +103,14 @@
     --container-md: 28rem;
     --text-xs: .75rem;
     --text-xs--line-height: calc(1 / .75);
-    --text-sm: .875rem;
-    --text-sm--line-height: calc(1.25 / .875);
     --text-2xl: 1.5rem;
     --text-2xl--line-height: calc(2 / 1.5);
     --text-3xl: 1.875rem;
     --text-3xl--line-height: calc(2.25 / 1.875);
     --text-4xl: 2.25rem;
     --text-4xl--line-height: calc(2.5 / 2.25);
+    --text-5xl: 3rem;
+    --text-5xl--line-height: 1;
     --text-6xl: 3.75rem;
     --text-6xl--line-height: 1;
     --text-8xl: 6rem;
@@ -550,10 +549,6 @@
     margin-left: calc(var(--spacing) * 2);
   }
 
-  .ml-4 {
-    margin-left: calc(var(--spacing) * 4);
-  }
-
   .block {
     display: block;
   }
@@ -568,10 +563,6 @@
 
   .inline-flex {
     display: inline-flex;
-  }
-
-  .h-1 {
-    height: calc(var(--spacing) * 1);
   }
 
   .h-2 {
@@ -732,6 +723,10 @@
     --tw-scale-y: 110%;
     --tw-scale-z: 110%;
     scale: var(--tw-scale-x) var(--tw-scale-y);
+  }
+
+  .rotate-180 {
+    rotate: 180deg;
   }
 
   .cursor-not-allowed {
@@ -934,16 +929,12 @@
     background-color: #e0e3e7;
   }
 
-  .bg-\[\#E0F2FE\] {
-    background-color: #e0f2fe;
-  }
-
   .bg-\[\#F6F7F9\] {
     background-color: #f6f7f9;
   }
 
-  .bg-\[\#FEE2E2\] {
-    background-color: #fee2e2;
+  .bg-\[\#F6F7F9\]\/50 {
+    background-color: oklab(97.5942% -.000272542 -.00285441 / .5);
   }
 
   .bg-\[\#FEF3C7\] {
@@ -1167,6 +1158,10 @@
     padding-inline: calc(var(--spacing) * 6);
   }
 
+  .py-0\.5 {
+    padding-block: calc(var(--spacing) * .5);
+  }
+
   .py-1 {
     padding-block: calc(var(--spacing) * 1);
   }
@@ -1187,6 +1182,10 @@
     padding-block: calc(var(--spacing) * 8);
   }
 
+  .pt-1 {
+    padding-top: calc(var(--spacing) * 1);
+  }
+
   .pt-6 {
     padding-top: calc(var(--spacing) * 6);
   }
@@ -1203,12 +1202,20 @@
     padding-right: calc(var(--spacing) * 3);
   }
 
+  .pr-4 {
+    padding-right: calc(var(--spacing) * 4);
+  }
+
   .pr-12 {
     padding-right: calc(var(--spacing) * 12);
   }
 
   .pb-2 {
     padding-bottom: calc(var(--spacing) * 2);
+  }
+
+  .pb-3 {
+    padding-bottom: calc(var(--spacing) * 3);
   }
 
   .pb-4 {
@@ -1254,6 +1261,11 @@
     line-height: var(--tw-leading, var(--text-4xl--line-height));
   }
 
+  .text-5xl {
+    font-size: var(--text-5xl);
+    line-height: var(--tw-leading, var(--text-5xl--line-height));
+  }
+
   .text-6xl {
     font-size: var(--text-6xl);
     line-height: var(--tw-leading, var(--text-6xl--line-height));
@@ -1262,11 +1274,6 @@
   .text-8xl {
     font-size: var(--text-8xl);
     line-height: var(--tw-leading, var(--text-8xl--line-height));
-  }
-
-  .text-sm {
-    font-size: var(--text-sm);
-    line-height: var(--tw-leading, var(--text-sm--line-height));
   }
 
   .text-xs {
@@ -1295,6 +1302,10 @@
     color: #9ca3af;
   }
 
+  .text-\[\#E0E3E7\] {
+    color: #e0e3e7;
+  }
+
   .text-\[\#F59E0B\] {
     color: #f59e0b;
   }
@@ -1305,10 +1316,6 @@
 
   .text-blue-600 {
     color: var(--color-blue-600);
-  }
-
-  .text-blue-700 {
-    color: var(--color-blue-700);
   }
 
   .text-gray-400 {
@@ -1445,15 +1452,6 @@
     transition-duration: .3s;
   }
 
-  .last\:border-0:last-child {
-    border-style: var(--tw-border-style);
-    border-width: 0;
-  }
-
-  .last\:pb-0:last-child {
-    padding-bottom: calc(var(--spacing) * 0);
-  }
-
   @media (hover: hover) {
     .hover\:scale-\[1\.01\]:hover {
       scale: 1.01;
@@ -1463,6 +1461,12 @@
   @media (hover: hover) {
     .hover\:scale-\[1\.02\]:hover {
       scale: 1.02;
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:bg-\[\#2D5BFF\]:hover {
+      background-color: #2d5bff;
     }
   }
 
@@ -1505,6 +1509,12 @@
   @media (hover: hover) {
     .hover\:text-\[\#1C1C1E\]:hover {
       color: #1c1c1e;
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:text-white:hover {
+      color: var(--color-white);
     }
   }
 
